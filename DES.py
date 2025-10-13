@@ -120,7 +120,7 @@ def bits_to_hex(bits):
     for i in range(0, len(bits), 4):
         nibble_bits = bits[i:i+4]
         nibble_str = ''.join(map(str, nibble_bits))
-        hex_val = hex(int(nibble_str, 2))[2:] # remove '0x'
+        hex_val = hex(int(nibble_str, 2))[2:] 
         hex_chars.append(hex_val)
     return "".join(hex_chars)
 
