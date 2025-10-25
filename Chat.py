@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Import all functions from your DES.py file
 # Make sure DES.py is in the same directory
 try:
-    from DES import des_encrypt, des_decrypt, bits_to_hex, hex_to_bits
+    from DES_Chat import des_encrypt, des_decrypt, bits_to_hex, hex_to_bits
 except ImportError:
     print("Error: DES.py not found.")
     print("Please make sure DES.py is in the same directory as Chat.py")
