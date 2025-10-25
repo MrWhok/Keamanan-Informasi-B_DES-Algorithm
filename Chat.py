@@ -3,8 +3,8 @@ import sys
 import os
 from dotenv import load_dotenv
 
-# Import all functions from your DES.py file
-# Make sure DES.py is in the same directory
+# Import semua fungsi dari file DES.py Anda
+# Pastikan DES.py ada di direktori yang sama
 try:
     from DES_Chat import des_encrypt, des_decrypt, bits_to_hex, hex_to_bits
 except ImportError:
@@ -12,7 +12,7 @@ except ImportError:
     print("Please make sure DES.py is in the same directory as Chat.py")
     sys.exit(1)
 
-# Load configuration from .env file
+# Muat konfigurasi dari file .env
 try:
     load_dotenv()
 except ModuleNotFoundError:
@@ -27,10 +27,10 @@ except FileNotFoundError:
 
 LHOST = os.getenv("LHOST")
 RHOST = os.getenv("RHOST")
-PORT = int(os.getenv("PORT", 8080)) # Default to 8080 if not set
+PORT = int(os.getenv("PORT", 8080)) # Default ke 8080 jika tidak diatur
 
 def get_key():
-    """Prompts user for a valid 8-character DES key."""
+    """Meminta pengguna untuk kunci DES 8 karakter yang valid."""
     key = ""
     while len(key) != 8:
         key = input("Enter your 8-character secret key: ")
@@ -39,26 +39,21 @@ def get_key():
     return key
 
 def sender_mode(key):
-    """Runs the client (sender) side. Sends ONE message then closes."""
+    """Menjalankan sisi klien (sender). Mengirim SATU pesan lalu ditutup."""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            # Set a timeout for the connection attempt (e.g., 5 seconds)
             s.settimeout(5)
             print(f"Attempting to connect to {RHOST}:{PORT}...")
             s.connect((RHOST, PORT))
             print("Connection successful!")
             
-            # Reset timeout for sending data
             s.settimeout(None)
 
-            # Only ask for one message. The 'while True' loop is removed.
             plaintext = input("Enter message: ")
             
-            # Encrypt the message
             encrypted_bits = des_encrypt(plaintext, key)
             encrypted_hex = bits_to_hex(encrypted_bits)
             
-            # Send the encrypted hex string, encoded as bytes
             s.sendall(encrypted_hex.encode('utf-8'))
             print("Message sent. Disconnecting.")
             
@@ -69,32 +64,32 @@ def sender_mode(key):
     except Exception as e:
         print(f"An error occurred in sender mode: {e}")
     finally:
-        # Socket is automatically closed by 'with' statement
         print("Returning to menu...\n")
 
 def receiver_mode(key):
-    """Runs the server (receiver) side. Receives ONE message then closes."""
+    """Menjalankan sisi server (receiver). Menerima SATU pesan lalu ditutup."""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            # This allows you to re-run the server quickly
+            
+            # --- INI DIA BARISNYA ---
+            # Baris ini mengizinkan skrip untuk segera menggunakan kembali port
+            # setelah ditutup, alih-alih menunggu OS melepaskannya.
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # -------------------------
             
             s.bind((LHOST, PORT))
             s.listen()
             print(f"Server is listening on {LHOST}:{PORT}...")
             print("Waiting for a connection...")
             
-            # Wait for a connection
             conn, addr = s.accept()
             
             with conn:
                 print(f"Connected by {addr}")
                 print("Waiting for one message...")
                 
-                # Only receive one message. The 'while True' loop is removed.
                 data = conn.recv(4096)
                 if data:
-                    # Decode the bytes back into a hex string
                     encrypted_hex = data.decode('utf-8').strip()
                     
                     try:
@@ -112,29 +107,23 @@ def receiver_mode(key):
             print("Message received. Closing connection.")
 
     except OSError as e:
-        if e.errno == 98: # Address already in use
+        if e.errno == 98: # Alamat sudah digunakan
             print(f"Error: Address {LHOST}:{PORT} is already in use.")
-            print("Please wait a moment or choose a different PORT in the .env file.")
+            print("This usually means another process (or your partner) is already listening.")
         else:
             print(f"An error occurred in receiver mode: {e}")
     except Exception as e:
         print(f"An error occurred in receiver mode: {e}")
     finally:
-        # Socket is automatically closed by 'with' statement
         print("Returning to menu...\n")
 
 
 def main():
-    """
-    Main function to run the chat application.
-    Prompts user for mode (sender/receiver) in a loop.
-    """
+    """Fungsi utama untuk menjalankan aplikasi obrolan."""
     print("--- DES Encrypted 'Walkie-Talkie' Chat ---")
     
-    # Ask for the key ONE time at the start.
     key = get_key()
     
-    # Main menu loop
     while True:
         print("Choose your role for this turn:")
         print("1. Sender (Send one message)")
@@ -151,9 +140,10 @@ def main():
             receiver_mode(key)
         elif choice == '3':
             print("Exiting chat. Goodbye!")
-            break # Exit the while loop
+            break 
         else:
             print("Invalid input. Please enter 1, 2, or 3.\n")
 
 if __name__ == "__main__":
     main()
+
