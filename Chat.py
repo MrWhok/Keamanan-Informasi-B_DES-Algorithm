@@ -3,8 +3,6 @@ import sys
 import os
 from dotenv import load_dotenv
 
-# Import semua fungsi dari file DES.py Anda
-# Pastikan DES.py ada di direktori yang sama
 try:
     from DES_Chat import des_encrypt, des_decrypt, bits_to_hex, hex_to_bits
 except ImportError:
@@ -12,7 +10,6 @@ except ImportError:
     print("Please make sure DES.py is in the same directory as Chat.py")
     sys.exit(1)
 
-# Muat konfigurasi dari file .env
 try:
     load_dotenv()
 except ModuleNotFoundError:
@@ -27,10 +24,9 @@ except FileNotFoundError:
 
 LHOST = os.getenv("LHOST")
 RHOST = os.getenv("RHOST")
-PORT = int(os.getenv("PORT", 8080)) # Default ke 8080 jika tidak diatur
+PORT = int(os.getenv("PORT", 8080))
 
 def get_key():
-    """Meminta pengguna untuk kunci DES 8 karakter yang valid."""
     key = ""
     while len(key) != 8:
         key = input("Enter your 8-character secret key: ")
@@ -39,7 +35,6 @@ def get_key():
     return key
 
 def sender_mode(key):
-    """Menjalankan sisi klien (sender). Mengirim SATU pesan lalu ditutup."""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(5)
@@ -67,15 +62,10 @@ def sender_mode(key):
         print("Returning to menu...\n")
 
 def receiver_mode(key):
-    """Menjalankan sisi server (receiver). Menerima SATU pesan lalu ditutup."""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             
-            # --- INI DIA BARISNYA ---
-            # Baris ini mengizinkan skrip untuk segera menggunakan kembali port
-            # setelah ditutup, alih-alih menunggu OS melepaskannya.
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # -------------------------
             
             s.bind((LHOST, PORT))
             s.listen()
@@ -107,7 +97,7 @@ def receiver_mode(key):
             print("Message received. Closing connection.")
 
     except OSError as e:
-        if e.errno == 98: # Alamat sudah digunakan
+        if e.errno == 98: 
             print(f"Error: Address {LHOST}:{PORT} is already in use.")
             print("This usually means another process (or your partner) is already listening.")
         else:
@@ -119,7 +109,6 @@ def receiver_mode(key):
 
 
 def main():
-    """Fungsi utama untuk menjalankan aplikasi obrolan."""
     print("--- DES Encrypted 'Walkie-Talkie' Chat ---")
     
     key = get_key()
