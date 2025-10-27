@@ -6,19 +6,16 @@ from dotenv import load_dotenv
 try:
     from DES_Chat import des_encrypt, des_decrypt, bits_to_hex, hex_to_bits
 except ImportError:
-    print("Error: DES.py not found.")
-    print("Please make sure DES.py is in the same directory as Chat.py")
+    print("Error: DES_Chat.py not found.")
     sys.exit(1)
 
 try:
     load_dotenv()
 except ModuleNotFoundError:
     print("Error: 'dotenv' module not found.")
-    print("Please install it by running: pip install python-dotenv")
     sys.exit(1)
 except FileNotFoundError:
     print("Error: .env file not found.")
-    print("Please create a .env file with LHOST, RHOST, and PORT.")
     sys.exit(1)
 
 
@@ -44,10 +41,16 @@ def sender_mode(key):
             
             s.settimeout(None)
 
+            print("======================================================")
             plaintext = input("Enter message: ")
+            print("======================================================")
             
             encrypted_bits = des_encrypt(plaintext, key)
             encrypted_hex = bits_to_hex(encrypted_bits)
+
+            print("======================================================")
+            print(f"Encrypted message (hex): {encrypted_hex}")
+            print("======================================================")
             
             s.sendall(encrypted_hex.encode('utf-8'))
             print("Message sent. Disconnecting.")
@@ -81,16 +84,21 @@ def receiver_mode(key):
                 data = conn.recv(4096)
                 if data:
                     encrypted_hex = data.decode('utf-8').strip()
+
+                    print("======================================================")
+                    print(f"Encrypted message (hex) received: {encrypted_hex}")
                     
                     try:
                         encrypted_bits = hex_to_bits(encrypted_hex)
                         decrypted_text = des_decrypt(encrypted_bits, key)
+                        
                         print(f"Received message: {decrypted_text}")
                     except Exception as e:
                         print(f"--- Error decrypting message ---")
                         print(f"Error: {e}. Was the key correct?")
                         print(f"Raw data received: {encrypted_hex}")
                         print(f"---------------------------------")
+                    print("======================================================")
                 else:
                     print("Client disconnected before sending data.")
 
@@ -108,9 +116,7 @@ def receiver_mode(key):
         print("Returning to menu...\n")
 
 
-def main():
-    print("--- DES Encrypted 'Walkie-Talkie' Chat ---")
-    
+def main():    
     key = get_key()
     
     while True:

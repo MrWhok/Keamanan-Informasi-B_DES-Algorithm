@@ -1,4 +1,3 @@
-# --- DES Constants ---
 
 IP = [58, 50, 42, 34, 26, 18, 10, 2,
       60, 52, 44, 36, 28, 20, 12, 4,
@@ -133,25 +132,10 @@ def hex_to_bits(hex_str):
     return bits
 
 
-def pad(text):
-    pad_len = 8 - (len(text) % 8)
-    if pad_len == 0: 
-        pad_len = 8
-    padding = chr(pad_len) * pad_len
-    return text + padding
-
-def unpad(text):
-    try:
-        pad_len = ord(text[-1])
-        if pad_len > 8:
-            return text
-        return text[:-pad_len]
-    except (IndexError, TypeError):
-        return text
-
 
 def generate_round_keys(key_bits):
     key_56 = permute(key_bits, PC1)
+
     left_half = key_56[:28]
     right_half = key_56[28:]
 
@@ -160,15 +144,19 @@ def generate_round_keys(key_bits):
         shift = KEY_SHIFTS[i]
         left_half = left_half[shift:] + left_half[:shift]
         right_half = right_half[shift:] + right_half[:shift]
-        
+
+        # 48 Bits
         combined_key = left_half + right_half
         round_key = permute(combined_key, PC2)
         round_keys.append(round_key)
-        
+
     return round_keys
+
+
 
 def mangler_function(right_half, round_key):
     expanded_bits = permute(right_half, E)
+
     xored_bits = xor(expanded_bits, round_key)
 
     s_box_output = []
@@ -182,9 +170,13 @@ def mangler_function(right_half, round_key):
         s_box_output.extend([int(b) for b in format(val, '04b')])
     
     p_box_output = permute(s_box_output, P)
+    
     return p_box_output
 
+
+
 def des_process(block_bits, key_bits, mode='encrypt'):
+
     round_keys = generate_round_keys(key_bits)
     if mode == 'decrypt':
         round_keys.reverse()
@@ -196,15 +188,27 @@ def des_process(block_bits, key_bits, mode='encrypt'):
 
     for i in range(16):
         f_result = mangler_function(right_half, round_keys[i])
+        
         new_right_half = xor(left_half, f_result)
+        
         new_left_half = right_half
+        
         left_half, right_half = new_left_half, new_right_half
 
     final_block = right_half + left_half
     
     processed_block = permute(final_block, FP)
+    
     return processed_block
 
+def pad(text):
+    pad_len = 8 - (len(text) % 8)
+    padding = chr(pad_len) * pad_len
+    return text + padding
+
+def unpad(text):
+    pad_len = ord(text[-1])
+    return text[:-pad_len]
 
 def des_encrypt(plaintext, key):
     if len(key) != 8:
@@ -229,18 +233,11 @@ def des_decrypt(ciphertext_bits, key):
     key_bits = string_to_bits(key)
     decrypted_text_bits = []
     
-    if len(ciphertext_bits) % 64 != 0:
-        raise ValueError("Ciphertext bit length is not a multiple of 64.")
-        
     for i in range(0, len(ciphertext_bits), 64):
         block_bits = ciphertext_bits[i:i+64]
         decrypted_block = des_process(block_bits, key_bits, mode='decrypt')
         decrypted_text_bits.extend(decrypted_block)
         
     decrypted_text = bits_to_string(decrypted_text_bits)
-    
-    try:
-        return unpad(decrypted_text)
-    except Exception as e:
-        print(f"Warning: Could not unpad. Returning raw decrypted text. Error: {e}")
-        return decrypted_text
+    return unpad(decrypted_text)
+
