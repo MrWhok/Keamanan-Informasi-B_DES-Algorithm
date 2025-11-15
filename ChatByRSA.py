@@ -36,32 +36,26 @@ def get_key():
 def sender_mode():
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(10) # Increased timeout for key exchange
+            s.settimeout(10) 
             print(f"Attempting to connect to {RHOST}:{PORT}...")
             s.connect((RHOST, PORT))
             print("Connection successful!")
             s.settimeout(None)
 
-            # 1. Receive the receiver's public key
             print("Receiving public key from receiver...")
-            public_pem = s.recv(4096) # Adjust buffer size
+            public_pem = s.recv(4096)
             if not public_pem:
                 print("Receiver disconnected before sending public key.")
                 return
 
-            # 2. Load the public key
             public_key = serialization.load_pem_public_key(public_pem)
             print("Public key received.")
 
-            # 3. Generate a random 8-byte (64-bit) DES key
             des_key_bytes = os.urandom(8)
             
-            # The DES key must be a string for your existing code
-            # We use 'latin-1' to map bytes 0-255 directly to a string
             key = des_key_bytes.decode('latin-1')
             print("Generated random 8-byte DES key.")
 
-            # 4. Encrypt the DES key with the public key
             print("Encrypting DES key for secure transport...")
             encrypted_des_key = public_key.encrypt(
                 des_key_bytes,
@@ -72,16 +66,13 @@ def sender_mode():
                 )
             )
 
-            # 5. Send the encrypted DES key to the receiver
             s.sendall(encrypted_des_key)
             print("Secure DES key sent.")
 
-            # 6. Now, proceed with the original chat logic
             print("======================================================")
             plaintext = input("Enter message: ")
             print("======================================================")
             
-            # Use the new, randomly generated key!
             encrypted_bits = des_encrypt(plaintext, key) 
             encrypted_hex = bits_to_hex(encrypted_bits)
 
@@ -101,9 +92,8 @@ def sender_mode():
     finally:
         print("Returning to menu...\n")
 
-def receiver_mode(): # No longer needs 'key' as an argument
+def receiver_mode(): 
     try:
-        # 1. Generate RSA private and public keys
         print("Generating RSA key pair (this may take a moment)...")
         private_key = rsa.generate_private_key(
             public_exponent=65537,
@@ -111,7 +101,6 @@ def receiver_mode(): # No longer needs 'key' as an argument
         )
         public_key = private_key.public_key()
 
-        # 2. Serialize the public key to send it
         public_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
@@ -129,18 +118,15 @@ def receiver_mode(): # No longer needs 'key' as an argument
             with conn:
                 print(f"Connected by {addr}")
 
-                # 3. Send the public key to the sender
                 print("Sending public key to sender...")
                 conn.sendall(public_pem)
 
-                # 4. Receive the encrypted DES key from the sender
                 print("Waiting for encrypted DES key...")
-                encrypted_des_key = conn.recv(1024) # Adjust buffer size if needed
+                encrypted_des_key = conn.recv(1024)
                 if not encrypted_des_key:
                     print("Sender disconnected before sending DES key.")
                     return
 
-                # 5. Decrypt the DES key with the private key
                 print("Decrypting DES key...")
                 des_key_bytes = private_key.decrypt(
                     encrypted_des_key,
@@ -151,12 +137,9 @@ def receiver_mode(): # No longer needs 'key' as an argument
                     )
                 )
                 
-                # The DES key must be a string for your existing code
-                # We use 'latin-1' to map bytes 0-255 directly to a string
                 key = des_key_bytes.decode('latin-1') 
                 print("Secure DES key established.")
 
-                # 6. Proceed to receive the actual message
                 print("Waiting for one message...")
                 data = conn.recv(4096)
                 if data:
@@ -166,7 +149,6 @@ def receiver_mode(): # No longer needs 'key' as an argument
                     
                     try:
                         encrypted_bits = hex_to_bits(encrypted_hex)
-                        # Use the new, securely received key!
                         decrypted_text = des_decrypt(encrypted_bits, key) 
                         print(f"Received message: {decrypted_text}")
                     except Exception as e:
